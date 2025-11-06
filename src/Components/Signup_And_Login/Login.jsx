@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import RoleDropdown from './RoleDropDown';
 import SocialLogin from './SocialLogin';
@@ -7,10 +7,14 @@ import api from './api';
 import { Toaster, toast } from 'react-hot-toast';
 
 function Login({ onForgotPasswordClick, onLoginSuccess }) {
+    localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
+
     const navigate = useNavigate();
     const [loginWithOtp, setLoginWithOtp] = useState(false);
     const [showLoginOtpForm, setShowLoginOtpForm] = useState(false);
     const [userId, setUserId] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     // Login form states
     const [loginMobileOrEmail, setLoginMobileOrEmail] = useState('');
@@ -24,6 +28,9 @@ function Login({ onForgotPasswordClick, onLoginSuccess }) {
     // Role selection states
     const [role, setRole] = useState('');
     const [isOpen, setIsOpen] = useState(false);
+
+    const [otpTimer, setOtpTimer] = useState(0);
+
 
     const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -43,6 +50,7 @@ function Login({ onForgotPasswordClick, onLoginSuccess }) {
     // Login with OTP handlers
     const handleLoginOtpSwitch = () => {
         setLoginWithOtp(!loginWithOtp);
+        setOtpTimer(0);
         setShowLoginOtpForm(false);
         setLoginMobile('');
         setLoginOtp('');
@@ -52,18 +60,32 @@ function Login({ onForgotPasswordClick, onLoginSuccess }) {
         setLoginMobileError('');
     };
 
+    useEffect(() => {
+        let interval;
+        if (otpTimer > 0) {
+            interval = setInterval(() => {
+                setOtpTimer(prev => prev - 1);
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [otpTimer]);
+
+
     const handleLoginMobileSubmit = async (e) => {
         e.preventDefault();
         const btn = document.getElementById("btn1");
         btn.disabled = true;
+        setIsLoading(true);
         if (loginMobile.length !== 10) {
             setLoginMobileError('Please enter a valid 10-digit mobile number.');
             btn.disabled = false;
+            setIsLoading(false);
             return;
         }
         if (!role) {
             toast("Please select a role.");
             btn.disabled = false;
+            setIsLoading(false);
             return;
         }
         setLoginMobileError('');
@@ -74,36 +96,41 @@ function Login({ onForgotPasswordClick, onLoginSuccess }) {
                 remember: remember,
             });
             setUserId(response.data.user_id); // save user_id for OTP step
-            toast("OTP sent to your mobile!");
+            toast.success(response.data.message || "OTP sent to your mobile number!");
+            setOtpTimer(30); 
             setShowLoginOtpForm(true);
-            setLoginMobile('');
             btn.disabled = false;
+            setIsLoading(false);
         } catch (error) {
             console.error("Login failed: ", error.response ? error.response.data : error.message);
-            toast.error("Login failed!");
+            toast.error(error.response?.data?.error || "Failed to send OTP");
             btn.disabled = false;
+            setIsLoading(false);
         }
     };
 
     const handleLoginOtpSubmit = async (e) => {
         e.preventDefault();
+        setIsLoading(true);
         try {
             const response = await api.post("/verify-otp/", {
                 user_id: userId,
                 otp: loginOtp,
                 remember: remember,
             });
+            console.log(response);
             toast.success("Logged in successfully!");
-            // Reset states after successful login
             setShowLoginOtpForm(false);
             setLoginWithOtp(false);
             setLoginMobile('');
             setLoginOtp('');
             setRole('');
-            onLoginSuccess(); // Notify parent of successful login (e.g., to redirect)
+            setIsLoading(false);
+            onLoginSuccess();
         } catch (err) {
             console.error(err);
             toast.error(err.response?.data?.error || "OTP verification failed");
+            setIsLoading(false);
         }
     };
 
@@ -136,10 +163,13 @@ function Login({ onForgotPasswordClick, onLoginSuccess }) {
         e.preventDefault();
         const btn = document.getElementById("btn6");
         btn.disabled = true;
+        setIsLoading(true);
+        
         try {
             if (!role) {
                 toast("Please select a role.");
                 btn.disabled = false;
+                setIsLoading(false);
                 return;
             }
 
@@ -149,6 +179,7 @@ function Login({ onForgotPasswordClick, onLoginSuccess }) {
                 // valid email
             } else {
                 btn.disabled = false;
+                setIsLoading(false);
                 setLoginEmailError("Enter a valid 10-digit mobile number or email.");
                 return;
             }
@@ -166,15 +197,15 @@ function Login({ onForgotPasswordClick, onLoginSuccess }) {
 
             setLoginEmailError("");
             toast.success("Logged in successfully!");
-            // Reset states after successful login
             setLoginMobileOrEmail("");
             setLoginPassword("");
             setRole('');
-            onLoginSuccess(); // Notify parent of successful login (e.g., to redirect)
+            onLoginSuccess();
             btn.disabled = false;
+            setIsLoading(false);
         } catch (error) {
             console.error("Login failed: ", error.response ? error.response.data : error.message);
-            toast.error("Login failed!");
+            toast.error(error.response?.data?.error || "Login failed");
             btn.disabled = false;
         }
     };
@@ -184,6 +215,7 @@ function Login({ onForgotPasswordClick, onLoginSuccess }) {
             <Toaster position="top-center" reverseOrder={false} />
             <div>
                 <p className="text-black text-center text-xl font-bold mb-2">Welcome back!</p>
+                {/* -------------------------------------------Login with Password--------------------------------*/}
                 {!loginWithOtp ? (
                     <form onSubmit={handleLoginSubmit}>
                         <input
@@ -223,18 +255,36 @@ function Login({ onForgotPasswordClick, onLoginSuccess }) {
                                 Login with Mobile
                             </span>
                         </div>
-                        <div className="flex items-center justify-center pt-2">
+                        <label className="flex items-center space-x-2 text-green-700 text-semibold">
                             <input
-                                className={`text-black font-bold p-2 mb-3 w-50 rounded-md  ${role ? 'bg-green-700 hover:bg-green-800' : 'bg-gray-400 cursor-not-allowed'} transition duration-200`}
-                                type="submit"
-                                value="Log In"
-                                id="btn6"
-                                disabled={!role}
+                                type="checkbox"
+                                checked={remember}
+                                onChange={handleRememberChange}
+                                className="accent-green-700"
                             />
+                            <span>Remember Me</span>
+                        </label>
+                        <div className="flex items-center justify-center pt-2">
+                            <button
+                                className={`relative text-white font-bold p-2 mb-3 w-50 rounded-md ${role ? 'bg-green-700 hover:bg-green-800' : 'bg-gray-400 cursor-not-allowed'} transition duration-200 min-w-[120px]`}
+                                type="submit"
+                                id="btn6"
+                                disabled={!role || isLoading}
+                            >
+                                {isLoading ? (
+                                    <div className="flex items-center justify-center space-x-2">
+                                        <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                        <span>In Progress...</span>
+                                    </div>
+                                ) : (
+                                    'Log In'
+                                )}
+                            </button>
                         </div>
                         <SocialLogin />
                     </form>
                 ) : (
+                    // -------------------------------------------Login with OTP--------------------------------
                     <form onSubmit={showLoginOtpForm ? handleLoginOtpSubmit : handleLoginMobileSubmit}>
                         {!showLoginOtpForm ? (
                             <>
@@ -248,6 +298,12 @@ function Login({ onForgotPasswordClick, onLoginSuccess }) {
                                     required
                                 />
                                 {loginMobileError && <p className="text-red-600 text-xs mb-1">{loginMobileError}</p>}
+                                <RoleDropdown
+                                    role={role}
+                                    isOpen={isOpen}
+                                    onClick={handleClick}
+                                    onSelect={handleRoleSelect}
+                                />
                             </>
                         ) : (
                             <input
@@ -259,12 +315,22 @@ function Login({ onForgotPasswordClick, onLoginSuccess }) {
                                 required
                             />
                         )}
-                        <RoleDropdown
-                            role={role}
-                            isOpen={isOpen}
-                            onClick={handleClick}
-                            onSelect={handleRoleSelect}
-                        />
+                        {showLoginOtpForm && (
+                            otpTimer > 0 ? (
+                                <p className="text-center text-gray-500 text-sm mb-2">
+                                    Resend OTP in {otpTimer}s
+                                </p>
+                            ) : (
+                                <p
+                                    className="text-center text-green-700 font-semibold mb-2 cursor-pointer"
+                                    onClick={handleLoginMobileSubmit}
+                                >
+                                    Resend OTP
+                                </p>
+                            )
+                        )}
+
+                        
                         <div className='flex justify-between text-green-700 font-semibold mb-2'>
                             <span
                                 className="cursor-pointer hover:underline "
@@ -276,13 +342,30 @@ function Login({ onForgotPasswordClick, onLoginSuccess }) {
                                 Login with Email
                             </span>
                         </div>
+                        <label className="flex items-center space-x-2 text-green-700 text-semibold">
+                            <input
+                                type="checkbox"
+                                checked={remember}
+                                onChange={handleRememberChange}
+                                className="accent-green-700"
+                            />
+                            <span>Remember Me</span>
+                        </label>
                         <div className="flex items-center justify-center pt-2">
                             <button
-                                className={`text-black font-bold p-2 mb-3 w-50 rounded-md ${role ? 'bg-green-700 hover:bg-green-800' : 'bg-gray-400 cursor-not-allowed'} transition duration-200`}
-                                type="submit" id="btn1"
-                                disabled={!role}
+                                className={`relative text-white font-bold p-2 mb-3 w-50 rounded-md ${role ? 'bg-green-700 hover:bg-green-800' : 'bg-gray-400 cursor-not-allowed'} transition duration-200 min-w-[120px]`}
+                                type="submit"
+                                id="btn1"
+                                disabled={!role || isLoading}
                             >
-                                {showLoginOtpForm ? 'Verify OTP & Login' : 'Send OTP'}
+                                {isLoading ? (
+                                    <div className="flex items-center justify-center space-x-2">
+                                        <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                        <span>In Progress...</span>
+                                    </div>
+                                ) : (
+                                    showLoginOtpForm ? 'Verify OTP & Login' : 'Send OTP'
+                                )}
                             </button>
                         </div>
                         <SocialLogin />
