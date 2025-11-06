@@ -4,6 +4,7 @@ import Header from "./Header";
 import './Support.css';
 import Settings from '../HomePage/Settings.jsx';
 import FileDropzone from './FileDropzone';
+import api from './api1.js';
 
 function Support() {
     const [grievances, setGrievances] = useState([]);
@@ -20,6 +21,8 @@ function Support() {
     const [showDetails, setShowDetails] = useState(false);
 
     const [answerno, setAnswerno] = useState(null);
+
+    API_URL = '/support/grievances/'
     
     const toggleAnswer = (index) => {
     if (answerno === index) {
@@ -38,8 +41,7 @@ function Support() {
     const fetchGrievances = async () => {
         try {
             const token = localStorage.getItem('access');
-            const res = await fetch('http://127.0.0.1:8000/support/grievances/', {
-                method: 'GET',
+            const res = await api.get(API_URL, {
                 headers: token ? { Authorization: `Bearer ${token}` } : {},
                 credentials: 'include',
             });
@@ -101,8 +103,7 @@ function Support() {
 
         try {
             const token = localStorage.getItem('access');
-            const res = await fetch('http://127.0.0.1:8000/support/grievances/', {
-                method: 'POST',
+            const res = await api.post(API_URL, {
                 headers: token ? { Authorization: `Bearer ${token}` } : {},
                 body: data,
                 credentials: 'include',
