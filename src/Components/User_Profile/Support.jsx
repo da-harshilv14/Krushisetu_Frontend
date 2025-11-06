@@ -22,7 +22,7 @@ function Support() {
 
     const [answerno, setAnswerno] = useState(null);
 
-    API_URL = '/support/grievances/'
+    const API_URL = '/support/grievances/'
     
     const toggleAnswer = (index) => {
     if (answerno === index) {
