@@ -7,7 +7,6 @@ const api = axios.create({
   withCredentials: true,
 });
 
-
 let isRefreshing = false;
 let failedQueue = [];
 
@@ -19,11 +18,23 @@ const processQueue = (error) => {
   failedQueue = [];
 };
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function delayedAction() {
+  console.log("Starting action...");
+  await sleep(3000);
+  console.log("Action resumed after 2 seconds.");
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-
+    if (localStorage.getItem("isLoggedOut") === "true") {
+      return Promise.reject(error);
+    }
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -37,13 +48,17 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        await api.post("/token/refresh/"); 
+        delayedAction();
+        await api.post("/token/refresh/");
         processQueue(null);
-        return api(originalRequest); 
+        return api(originalRequest);
+
       } catch (refreshError) {
         processQueue(refreshError);
         console.warn("Session expired. Redirecting to login...");
-        window.location.href = "/login";
+        if (!localStorage.getItem("isLoggedOut")) {
+          window.location.href = "/login";
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -53,5 +68,6 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
 
 export default api;

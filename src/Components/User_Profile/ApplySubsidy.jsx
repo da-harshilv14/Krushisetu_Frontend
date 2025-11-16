@@ -548,8 +548,6 @@ export default function ApplySubsidy() {
         ifsc: form.ifsc,
       };
 
-      console.log('Submitting payload:', payload);
-
       await api.post(APPLY_URL, payload, {
         headers: {
           'Content-Type': 'application/json',
@@ -574,7 +572,7 @@ export default function ApplySubsidy() {
   function nextStep() { if (validateCurrentStep()) setStep(s => s + 1); }
   function prevStep() { setStep(s => Math.max(0, s - 1)); }
 
-    return (
+  return (
     <>
       <Header />
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-200 p-6">

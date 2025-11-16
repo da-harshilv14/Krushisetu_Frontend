@@ -105,7 +105,6 @@ function Personal_info() {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 const data = response.data;
-                console.log("Fetched profile data:", data);
 
                 const createFilePreview = (fileOrUrl) => {
                     if (!fileOrUrl) return null;
@@ -231,7 +230,6 @@ function Personal_info() {
         btn.disabled = true;
         const token = localStorage.getItem("access");
         const data = new FormData();
-        console.log("Submitting form data:", formData);
         Object.keys(formData).forEach((key) => {
             if (formData[key]) data.append(key, formData[key]);
         });
