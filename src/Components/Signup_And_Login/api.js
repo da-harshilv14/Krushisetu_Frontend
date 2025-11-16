@@ -33,7 +33,6 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // ⛔️ If user manually logged out → block auto-refresh
     if (localStorage.getItem("isLoggedOut") === "true") {
       return Promise.reject(error);
     }
@@ -53,12 +52,12 @@ api.interceptors.response.use(
       try {
         await api.post("/token/refresh/");
         processQueue(null);
+        localStorage.setItem("isLoggedOut", "false");
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError);
 
-        // 🧹 Prevent auto-login by marking as logged-out
-        localStorage.setItem("isLoggedOut", "true");
+  
 
         window.location.href = "/login";
         return Promise.reject(refreshError);
