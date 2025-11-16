@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import RoleDropdown from './RoleDropDown';
 import SocialLogin from './SocialLogin';
 import PasswordToggleIcon from './PasswordToggleIcon';
 import api from './api';
 import { Toaster, toast } from 'react-hot-toast';
+import { clearAuth, normalizeRole, storeTokens } from '../../utils/auth';
+import { useNavigate } from 'react-router-dom';
 
-function Login({ onForgotPasswordClick, onLoginSuccess }) {
-    localStorage.removeItem("access");
-    localStorage.removeItem("refresh");
+function Login({ onForgotPasswordClick, onLoginSuccess, redirectTo }) {
 
     const navigate = useNavigate();
+
+    useEffect(() => {
+        clearAuth();
+    }, []);
+
     const [loginWithOtp, setLoginWithOtp] = useState(false);
     const [showLoginOtpForm, setShowLoginOtpForm] = useState(false);
     const [userId, setUserId] = useState('');
@@ -30,6 +34,22 @@ function Login({ onForgotPasswordClick, onLoginSuccess }) {
     const [isOpen, setIsOpen] = useState(false);
 
     const [otpTimer, setOtpTimer] = useState(0);
+
+    useEffect(() => {
+        const checkAuth = async () => {
+            try {
+                // Try refreshing the token silently
+                const res = await api.post("/token/refresh/");
+                toast.success(" User already logged in ");
+                console.log(res.data);
+                navigate("/sidebar"); // redirect if valid refresh token
+            } catch (err) {
+                toast.error("❌ Not logged in or refresh failed");
+                // do nothing, stay on login
+            }
+        };
+        checkAuth();
+    }, [navigate]);
 
 
     const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -124,9 +144,15 @@ function Login({ onForgotPasswordClick, onLoginSuccess }) {
             setLoginWithOtp(false);
             setLoginMobile('');
             setLoginOtp('');
+            const normalizedRole = normalizeRole(role);
+            storeTokens({
+                access: response.data.access,
+                refresh: response.data.refresh,
+                role: normalizedRole,
+            });
             setRole('');
             setIsLoading(false);
-            onLoginSuccess();
+            onLoginSuccess(normalizedRole);
         } catch (err) {
             console.error(err);
             toast.error(err.response?.data?.error || "OTP verification failed");
@@ -191,22 +217,45 @@ function Login({ onForgotPasswordClick, onLoginSuccess }) {
                 remember: remember,
             });
 
-            // Save JWT tokens (for later authenticated requests)
-            localStorage.setItem("access", response.data.access);
-            localStorage.setItem("refresh", response.data.refresh);
+            const normalizedRole = normalizeRole(role);
+
+            storeTokens({
+                access: response.data.access,
+                refresh: response.data.refresh,
+                role: normalizedRole,
+            });
 
             setLoginEmailError("");
             toast.success("Logged in successfully!");
             setLoginMobileOrEmail("");
             setLoginPassword("");
             setRole('');
-            onLoginSuccess();
-            btn.disabled = false;
-            setIsLoading(false);
+            // If a redirect target was provided (e.g. /apply/:id), prefer it
+            if (redirectTo) {
+                btn.disabled = false;
+                setIsLoading(false);
+                navigate(redirectTo);
+                return;
+            }
+
+            if(role == 'Officer'){
+                btn.disabled = false;
+                setIsLoading(false);
+                navigate('/officer_sidebar');
+            }else if(role == 'Subsidy_Provider'){
+                btn.disabled = false;
+                setIsLoading(false);
+                navigate('/sub');
+            }else{
+                onLoginSuccess();
+                btn.disabled = false;
+                setIsLoading(false);
+            }
         } catch (error) {
             console.error("Login failed: ", error.response ? error.response.data : error.message);
             toast.error(error.response?.data?.error || "Login failed");
             btn.disabled = false;
+            setIsLoading(false);
         }
     };
 

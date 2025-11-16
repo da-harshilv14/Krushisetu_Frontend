@@ -1,11 +1,15 @@
+// src/api.js
 import axios from "axios";
 
-const api = axios.create({
+const BASE_URL = import.meta.env.MODE === 'production' 
+  ? `${import.meta.env.VITE_BASE_URL}` 
+  : 'http://127.0.0.1:8000'; 
 
-  baseURL: `${import.meta.env.VITE_BASE_URL}`,
+const api = axios.create({
+  baseURL: BASE_URL,
+  withCredentials: true,
   xsrfCookieName: 'csrftoken',
   xsrfHeaderName: 'X-CSRFToken',
-  withCredentials: true,
 });
 
 export default api;

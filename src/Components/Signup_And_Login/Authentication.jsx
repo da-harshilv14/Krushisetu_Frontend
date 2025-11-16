@@ -1,27 +1,33 @@
 import React, { useState } from 'react';
 import './Authentication.css'; // Your main CSS file
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeftLong } from '@fortawesome/free-solid-svg-icons';
 import Login from './Login';
 import Signup from './Signup';
 import ForgotPassword from './ForgotPassword';
-import Settings from '../HomePage/Settings';    
+import Settings from '../HomePage/Settings';
+import { getRedirectPathForRole } from '../../utils/auth';
 
 function Authentication() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const redirectTo = location?.state?.redirectTo || null;
     const [page, setPage] = useState('login'); // 'login' or 'signup'
     const [forgotPasswordActive, setForgotPasswordActive] = useState(false); // Controls visibility of ForgotPasswordFlow
 
     // Function to switch between login and signup, and reset states
     const handlePageSwitch = (targetPage) => {
         setPage(targetPage);
-        setForgotPasswordActive(false); // Always exit forgot password flow when switching tabs
-        // Any other top-level resets if necessary
+        setForgotPasswordActive(false);
     };
 
     // Callback for LoginPage to trigger navigation after successful login
     const handleLoginSuccess = () => {
+        if (redirectTo) {
+            navigate(redirectTo);
+            return;
+        }
         navigate('/sidebar');
     };
 
@@ -40,7 +46,6 @@ function Authentication() {
         setForgotPasswordActive(false);
         setPage('login');
     };
-
 
     return (
         <>
@@ -71,6 +76,7 @@ function Authentication() {
                         <Login
                             onForgotPasswordClick={handleForgotPasswordClick}
                             onLoginSuccess={handleLoginSuccess}
+                            redirectTo={redirectTo}
                         />
                     ) : ( // page === 'signup'
                         <Signup
