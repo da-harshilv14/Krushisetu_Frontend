@@ -42,7 +42,7 @@ function Header() {
           await api.post("/api/logout/");
           setTimeout(()=>{
               toast.success("Logged out successfully");
-          }, 2000);
+          }, 5000);
           
       } 
       catch (error) {
@@ -54,6 +54,7 @@ function Header() {
           }
       }
 
+      
       // Clear local auth (tokens + role)
       clearAuth();
 
@@ -64,7 +65,7 @@ function Header() {
       // Redirect to login
       setTimeout(() => {
           window.location.href = "/login";
-      }, 1000);
+      }, 2000);
   };
 
 

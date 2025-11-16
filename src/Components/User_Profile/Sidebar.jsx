@@ -56,11 +56,11 @@ function Sidebar() {
     const handleLogout = async () => {
         try {
             localStorage.setItem("isLoggedOut", "true");
-
-            // Notify backend
             await api.post("/api/logout/");
-
-            toast.success("Logged out successfully");
+            setTimeout(()=>{
+                toast.success("Logged out successfully");
+            }, 5000);
+            
         } 
         catch (error) {
             if (!error.response) {
@@ -71,6 +71,7 @@ function Sidebar() {
             }
         }
 
+        
         // Clear local auth (tokens + role)
         clearAuth();
 
@@ -81,7 +82,7 @@ function Sidebar() {
         // Redirect to login
         setTimeout(() => {
             window.location.href = "/login";
-        }, 1000);
+        }, 2000);
     };
 
 

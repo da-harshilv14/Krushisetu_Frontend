@@ -32,9 +32,12 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    // ⛔️ If user manually logged out → block auto-refresh
     if (localStorage.getItem("isLoggedOut") === "true") {
       return Promise.reject(error);
     }
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -48,17 +51,16 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        delayedAction();
         await api.post("/token/refresh/");
         processQueue(null);
         return api(originalRequest);
-
       } catch (refreshError) {
         processQueue(refreshError);
-        console.warn("Session expired. Redirecting to login...");
-        if (!localStorage.getItem("isLoggedOut")) {
-          window.location.href = "/login";
-        }
+
+        // 🧹 Prevent auto-login by marking as logged-out
+        localStorage.setItem("isLoggedOut", "true");
+
+        window.location.href = "/login";
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -68,6 +70,7 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
 
 
 export default api;
