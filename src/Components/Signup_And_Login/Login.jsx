@@ -32,6 +32,12 @@ function Login({ onForgotPasswordClick, redirectTo }) {
     const [otpTimer, setOtpTimer] = useState(0);
 
     useEffect(() => {
+
+        if (localStorage.getItem("isLoggedOut") === "true") {
+            clearAuth();  
+            return;  
+        }
+
         const access = localStorage.getItem("access");
         const storedRole = localStorage.getItem("user_role");
 
