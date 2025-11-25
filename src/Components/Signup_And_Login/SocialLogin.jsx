@@ -23,13 +23,7 @@ function SocialLogin() {
                 token,
             });
 
-            // Extract data from backend
             const { access, refresh, role } = res.data;
-
-            if (!access || !refresh || !role) {
-                toast.error("Invalid response from server.");
-                return;
-            }
 
             const normalizedRole = normalizeRole(role);
 
@@ -39,7 +33,7 @@ function SocialLogin() {
                 refresh,
                 role: normalizedRole,
             });
-
+            localStorage.setItem("isLoggedOut", "false");
             toast.success("Logged in successfully!");
 
             // Redirect based on role
