@@ -23,7 +23,8 @@ function SocialLogin() {
                 token,
             });
 
-            const { access_token, refresh_token} = res.data;
+            const { access_token, refresh_token} = res.cookies;
+            console.log("Access Token:", access_token);
             const role = res.data.user.role;
             console.log("Login response:", res.data);
 
