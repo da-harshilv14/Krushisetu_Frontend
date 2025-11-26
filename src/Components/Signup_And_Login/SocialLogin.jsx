@@ -27,6 +27,12 @@ function SocialLogin() {
 
             const normalizedRole = normalizeRole(role);
 
+            console.log("Storing tokens and role:", {
+                            access: response.data.access,
+                            refresh: response.data.refresh,
+                            role: normalizedRole,
+                        });
+                        
             // Store tokens + role
             storeTokens({
                 access,
