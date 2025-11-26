@@ -176,6 +176,11 @@ function Login({ onForgotPasswordClick, redirectTo }) {
             setLoginMobile('');
             setLoginOtp('');
             const normalizedRole = normalizeRole(role);
+            console.log("Storing tokens and role:", {
+                access: response.data.access,
+                refresh: response.data.refresh,
+                role: normalizedRole,
+            });
             storeTokens({
                 access: response.data.access,
                 refresh: response.data.refresh,
