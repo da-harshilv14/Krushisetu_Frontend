@@ -85,6 +85,11 @@ function Sidebar() {
         }, 2000);
     };
 
+    const handleRedirectToHome = () => {
+        console.log("Redirecting to home");
+        window.location.href = "/";
+    }
+
 
 
     const handleChangePassword = () => {
@@ -109,7 +114,7 @@ function Sidebar() {
             <div className="lg:hidden sticky top-0 z-50 bg-white shadow-md">
                 <div className="flex items-center justify-between p-4">
                     <div className="flex items-center gap-2 ">
-                        <img src="./Krushisetu_banner-removebg-preview.png" className='h-10 w-30' />
+                        <img src="./Krushisetu_banner-removebg-preview.png" className='h-10 w-30' onClick={()=> handleRedirectToHome()}/>
                     </div>
                     <div className="flex items-center gap-2 md:gap-4">
                         <img src="./Notification.svg" alt="Notifications" className="h-8 w-8 cursor-pointer" />
@@ -188,7 +193,7 @@ function Sidebar() {
             {/* ----------------------------Desktop Sidebar---------------------------- */}
             <div className='flex min-h-screen'>
                 <div className='max-w-90 w-73 rounded-2xl sticky top-0 self-start hidden lg:flex flex-col'>
-                    <img src="./Krushisetu_banner-removebg-preview.png" className='lg:h-20 lg:w-50 md:h-15 md:w-45 h-10 w-30 pt-3 ml-2' />
+                    <img src="./Krushisetu_banner-removebg-preview.png" className='lg:h-20 lg:w-50 md:h-15 md:w-45 h-10 w-30 pt-3 ml-2' onClick={handleRedirectToHome}/>
                     <hr role="separator" className="my-2 border-t border-gray-300" />
                     <div className='flex flex-col gap-6 mt-5'>
                         {sidebar_options.map((option) => (

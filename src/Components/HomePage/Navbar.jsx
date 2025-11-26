@@ -1,6 +1,7 @@
 import React,{useState, useEffect} from "react";
 import { useNavigate, useLocation } from 'react-router-dom';
 import './Navbar.css';
+import api from "../User_Profile/api1";
 
 function Navbar() {
     const navigate = useNavigate();
@@ -135,6 +136,38 @@ function Navbar() {
       };
     }, []);
 
+    const handleLogoutClick = async () => {
+        try {
+            localStorage.setItem("isLoggedOut", "true");
+            await api.post("/api/logout/");
+            setTimeout(()=>{
+                toast.success("Logged out successfully");
+            }, 5000);
+            
+        } 
+        catch (error) {
+            if (!error.response) {
+                console.warn("Server unreachable — local logout only.");
+                toast.error("⚠️ Server offline. Logged out locally.");
+            } else {
+                toast.error("Logout failed on server. Logged out locally.");
+            }
+        }
+
+        
+        // Clear local auth (tokens + role)
+        clearAuth();
+
+        // Remove cookies (if backend set them)
+        Cookies.remove("access_token", { path: "/" });
+        Cookies.remove("refresh_token", { path: "/" });
+
+        // Redirect to login
+        setTimeout(() => {
+            window.location.href = "/login";
+        }, 2000);
+    };
+
     return (
     <>
       <div className="w-full bg-white text-black sticky top-0 z-50 shadow-md">
@@ -175,11 +208,21 @@ function Navbar() {
                 <button onClick={() => scrollToSection('news')} className={`Navbar-mobile ${activeSection === 'news' ? 'active' : ''}`}>News</button>
                 <button onClick={() => scrollToSection('faq')} className={`Navbar-mobile ${activeSection === 'faq' ? 'active' : ''}`}>FAQ</button>
                 <button onClick={() => scrollToSection('contact')} className={`Navbar-mobile ${activeSection === 'contact' ? 'active' : ''}`}>Contact Us</button>
-                <button
-                  onClick={handleLoginClick}
-                  className="Navbar-mobile mb-2 font-semibold">
-                  Login
-                </button>
+                {localStorage.getItem("access") ? (
+                  <button
+                    onClick={handleLogoutClick}
+                    className="Navbar-mobile mb-2 font-semibold"
+                  >
+                    Logout
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleLoginClick}
+                    className="Navbar-mobile mb-2 font-semibold"
+                  >
+                    Login
+                  </button>
+                )}
               </div>
             )}
           </div>
