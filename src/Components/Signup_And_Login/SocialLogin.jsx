@@ -24,7 +24,8 @@ function SocialLogin() {
             });
 
             const { access_token, refresh_token} = res.data;
-            const role = res.message.role;
+            const role = res.data.role;
+            console.log(role);
 
             const normalizedRole = normalizeRole(role);
 
