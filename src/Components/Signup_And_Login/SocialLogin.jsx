@@ -23,20 +23,15 @@ function SocialLogin() {
                 token,
             });
 
-            const { access, refresh, role } = res.data;
+            const { access_token, refresh_token} = res.data;
+            const role = res.message.role;
 
             const normalizedRole = normalizeRole(role);
 
-            console.log("Storing tokens and role:", {
-                            access: response.data.access,
-                            refresh: response.data.refresh,
-                            role: normalizedRole,
-                        });
-                        
             // Store tokens + role
             storeTokens({
-                access,
-                refresh,
+                access_token,
+                refresh_token,
                 role: normalizedRole,
             });
             localStorage.setItem("isLoggedOut", "false");
