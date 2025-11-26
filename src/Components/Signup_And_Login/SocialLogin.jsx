@@ -25,7 +25,7 @@ function SocialLogin() {
 
             const { access_token, refresh_token} = res.data;
             const role = res.data.role;
-            console.log(role);
+            console.log("Login response:", res.data);
 
             const normalizedRole = normalizeRole(role);
 
